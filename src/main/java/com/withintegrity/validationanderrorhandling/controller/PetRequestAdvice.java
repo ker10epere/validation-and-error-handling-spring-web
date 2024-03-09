@@ -13,10 +13,8 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdvice;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @RestControllerAdvice(assignableTypes = PetController.class)
@@ -38,7 +36,8 @@ public class PetRequestAdvice implements RequestBodyAdvice {
     public Object afterBodyRead(Object body, HttpInputMessage inputMessage, MethodParameter parameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
         Pet pet = (Pet) body;
         System.out.println("> PetRequestAdvice.afterBodyRead body " + pet);
-        Set<ConstraintViolation<Pet>> violation = validator.validate(pet);
+        Set<ConstraintViolation<Pet>> violation = sortedConstraintViolation(validator.validate(pet));
+
         System.out.println("> PetRequestAdvice.afterBodyRead violation " + violation);
         if (!violation.isEmpty()) {
             List<AbstractMap.SimpleEntry<String, String>> violations = violation.stream()
@@ -53,6 +52,12 @@ public class PetRequestAdvice implements RequestBodyAdvice {
         }
 
         return body;
+    }
+
+    public Set<ConstraintViolation<Pet>> sortedConstraintViolation(Set<ConstraintViolation<Pet>> violations) {
+        return violations.stream()
+                .sorted(Comparator.comparingInt(violation -> violation.getPropertyPath().hashCode()))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @Override
