@@ -46,7 +46,7 @@ public class APIExceptionHander extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(PetValidationResponseException.class)
     public ResponseEntity<Object> handlePetValidationResponseException(PetValidationResponseException e, WebRequest request) {
-        return createResponseEntity(e.getErrorResponse(), e.getHeaders(), e.getStatusCode(), request);
+        return this.createResponseEntity(e.getErrorResponse(), e.getHeaders(), e.getStatusCode(), request);
     }
 
 }
