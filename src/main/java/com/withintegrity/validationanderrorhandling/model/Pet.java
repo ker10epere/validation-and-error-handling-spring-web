@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record Pet(
-        @Size(min = 20, message = "size must be of min {min}")
+        @Size(min = 20, message = "size must be min of {min}")
         @NotNull
         String name,
         @Min(2)

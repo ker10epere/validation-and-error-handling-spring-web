@@ -1,7 +1,6 @@
 package com.withintegrity.validationanderrorhandling.controller;
 
 import com.withintegrity.validationanderrorhandling.model.Pet;
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
@@ -13,7 +12,8 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdvice;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.Comparator;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -36,32 +36,22 @@ public class PetRequestAdvice implements RequestBodyAdvice {
     public Object afterBodyRead(Object body, HttpInputMessage inputMessage, MethodParameter parameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
         Pet pet = (Pet) body;
         System.out.println("> PetRequestAdvice.afterBodyRead body " + pet);
-        Set<ConstraintViolation<Pet>> violation = sortedConstraintViolation(validator.validate(pet));
+        Set<ParameterViolation> violations = validator.validate(pet)
+                .stream()
+                .sorted(Comparator.comparingInt(violation -> violation.getPropertyPath().hashCode()))
+                .map(violation -> new ParameterViolation(violation.getPropertyPath().toString(), violation.getMessage()))
+                .collect(Collectors.toSet());
 
-        System.out.println("> PetRequestAdvice.afterBodyRead violation " + violation);
-        if (!violation.isEmpty()) {
-            List<AbstractMap.SimpleEntry<String, String>> violations = violation.stream()
-                    .reduce(new ArrayList<>(), (list, petViolation) -> {
-                        list.add(new AbstractMap.SimpleEntry<String, String>(petViolation.getPropertyPath().toString(), petViolation.getMessage()));
-                        return list;
-                    }, (list1, list2) -> {
-                        list1.addAll(list2);
-                        return list1;
-                    });
+        if (!violations.isEmpty()) {
             throw new PetValidationResponseException(HttpStatus.BAD_REQUEST, violations);
         }
 
         return body;
     }
 
-    public Set<ConstraintViolation<Pet>> sortedConstraintViolation(Set<ConstraintViolation<Pet>> violations) {
-        return violations.stream()
-                .sorted(Comparator.comparingInt(violation -> violation.getPropertyPath().hashCode()))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
     @Override
     public Object handleEmptyBody(Object body, HttpInputMessage inputMessage, MethodParameter parameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
         return body;
     }
+
 }
