@@ -12,7 +12,6 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdvice;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -38,7 +37,6 @@ public class PetRequestAdvice implements RequestBodyAdvice {
         System.out.println("> PetRequestAdvice.afterBodyRead body " + pet);
         Set<ParameterViolation> violations = validator.validate(pet)
                 .stream()
-                .sorted(Comparator.comparingInt(violation -> violation.getPropertyPath().hashCode()))
                 .map(violation -> new ParameterViolation(violation.getPropertyPath().toString(), violation.getMessage()))
                 .collect(Collectors.toSet());
 
